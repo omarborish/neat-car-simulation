@@ -26,7 +26,7 @@ function Find-SimulationPython {
     }
     $probe = 'import sys; sys.exit(0 if (3,10) <= sys.version_info[:2] < (3,14) else 1)'
     if ($RequireDependencies) {
-        $probe = "import sys, importlib.metadata as m; import pygame, neat; sys.exit(0 if (3,10) <= sys.version_info[:2] < (3,14) and m.version('pygame')=='2.6.1' and m.version('neat-python')=='0.92' else 1)"
+        $probe = "import sys, importlib.metadata as m; import pygame, neat, aiohttp; sys.exit(0 if (3,10) <= sys.version_info[:2] < (3,14) and m.version('pygame')=='2.6.1' and m.version('neat-python')=='0.92' and m.version('aiohttp')=='3.14.5' else 1)"
     }
     foreach ($candidate in ($candidates | Select-Object -Unique)) {
         if (Test-Path -LiteralPath $candidate -PathType Leaf) {

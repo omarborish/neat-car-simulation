@@ -42,7 +42,10 @@ def get_spec(track_id):
 
 
 @lru_cache(maxsize=16)
-def load_track(track_id):
+def load_track(track_id, road_width=120):
+    if track_id in ("monza", "silverstone"):
+        from circuits import load_circuit
+        return load_circuit(track_id, road_width)
     spec = get_spec(track_id)
     path = ROOT / "assets" / "tracks" / spec.filename
     if not path.is_file():

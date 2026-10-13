@@ -1,166 +1,223 @@
 # NEAT Car Simulation
 
-A small 2D driving experiment prepared for a live interview demo: choose a
-circuit, watch a population learn, or replay a saved driver. Built with Python,
-Pygame, and NEAT. The simulation runs locally and needs no online service.
+A local browser driving experiment for a live interview: replay a verified
+Classic driver, watch a population learn, and inspect the five sensors behind
+its four driving choices. Python owns physics and NEAT evolution; the browser
+draws the track and controls the session. No online service is needed after setup.
 
-![Track and color selection](docs/menu.png)
-
-## Project origin
-
-This project is an extension of the **NeuralNine / Cheesy AI car simulation**,
-not an independently invented driving algorithm. The starting code and assets
-come from the tutorial project
-[NeuralNine/ai-car-simulation](https://github.com/NeuralNine/ai-car-simulation).
-Its [original source](https://github.com/NeuralNine/ai-car-simulation/blob/master/newcar.py)
-credits **Cheesy AI** for inspiration and **Florian Dedov (NeuralNine)** for
-the tutorial implementation. See [ATTRIBUTION.md](ATTRIBUTION.md) for the
-verified asset matches and provenance details.
-
-The original experiment supplied the bitmap tracks, five wall-distance sensors,
-four driving actions, and NEAT population. This version adds a presentation menu,
-track previews, color controls, pause/restart, visible sensors, a Windows launcher,
-driver export/replay, boundary handling, capped speed, and regression checks.
-AI assistance was used for this presentation upgrade and its tests and documentation.
+![Monza live training in the browser](docs/browser-monza-1280.jpg)
 
 ## Start on Windows
 
 1. Download or clone the repository and extract it into a normal folder.
-2. On a new computer, install **Python 3.10–3.13**, then double-click `Setup.bat`.
-   Setup creates `.venv` and installs the two pinned libraries. Internet access is
-   needed only during setup.
-3. Double-click **`Launch.bat`**. Pick a track and car color, then select
-   **Train live** or **Replay saved**.
+2. On a new computer, install **Python 3.10–3.13**, then double-click
+   **Setup.bat**. It creates a project `.venv` and installs three pinned libraries:
+   Pygame 2.6.1, neat-python 0.92, and aiohttp 3.14.5. Setup needs internet access.
+3. Double-click **Launch.bat**. The launcher waits for the local server and opens
+   the default browser. Classic saved replay starts immediately on a fresh install.
+4. Click **Stop server** when finished. Closing the tab alone leaves the simulation
+   running. Launch again to start a fresh server after stopping.
 
-The launcher first checks the project environment, then common Python/Anaconda
-installations. It never depends on a particular user's absolute folder path.
-If the compatible libraries are already installed in Anaconda, setup is optional.
-Python 3.14 is excluded because this version pins an earlier Pygame release.
+The launcher checks the project environment, then common Python/Anaconda
+installations. It does not depend on the author's folder path. Python 3.14 is
+excluded by the pinned Pygame setup. If launch fails, run Setup and read the two
+attempt logs named in the error under `logs/`.
 
-On other platforms, use a virtual environment:
+The service binds only to `127.0.0.1`, usually at port 8765. If another app owns
+that port, it chooses an available port and opens the actual URL. A second launch
+reuses a verified ready server for this checkout, preserving its session. Reload
+reconnects to the current session. Connection status is visible, and simulation
+commands are disabled while disconnected. Multiple tabs share one server session.
+
+For a terminal launch, or on another platform:
 
 ```sh
 python -m venv .venv
 # Windows: .venv\Scripts\activate
 # macOS/Linux: source .venv/bin/activate
 python -m pip install -r requirements.txt
-python app.py
+python server.py
 ```
 
-The application and tests have been exercised on Windows with Python 3.12.7,
-Pygame 2.6.1, and neat-python 0.92. Other platforms use the same Python entry point;
-the Windows launch scripts are platform-specific.
+`python server.py --help` lists `--port PORT`, `--no-browser`, and
+`--identity-file PATH`. `--port 0` lets the OS choose a port. Windows diagnostics,
+run from the project folder:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/launch.ps1 -CheckOnly
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/launch.ps1 -NoBrowser -Port 0
+```
+
+The server and tests were exercised on Windows with Python 3.12.7. Other platforms
+have not been verified here. A native Pygame fallback remains: `python app.py`,
+or `python app.py --mode replay --track classic --color red`. It has its own menu
+and keyboard controls; the browser is the default launcher experience.
 
 ## A ready-to-show driver
 
-Select **Classic circuit → Replay saved** for the bundled driver. It was actually
-trained with seed 7, selected at generation 3, and survived all 1,200 simulation
-steps in verification (20 seconds at normal playback). Its saved fitness is
-approximately 359.5. It loops automatically after an episode ends.
+Classic's bundled driver was trained with seed 7 and selected at generation 3.
+Fresh verification confirms it survives **1,200 steps**, covers the circuit
+instead of circling in place, and has distance fitness about **359.5**. An episode
+is nominally 20 seconds at 60 steps/s; actual time depends on throughput. Replay
+loops when an episode ends. A compatible local Classic save can take precedence.
 
-![Saved driver replay](docs/replay.png)
+![Classic saved replay](docs/browser-classic-1280.jpg)
 
-Local training automatically saves each improved generation winner under
-`saved/<track>.json`. Replay prefers a local save for the selected track; otherwise,
-it uses the bundled classic driver. The interface displays the training track and
-marks replay on a different circuit as a **transfer test**. Success on one track
-does not establish success on every track. A saved driver is an inference network,
-not a checkpoint for resuming an evolutionary population.
+Monza and Silverstone are **circuit studies**. They start live training when no
+compatible local champion exists. Both completed a genuine NEAT generation and
+independent saved replay during verification; those early champions crashed with
+zero laps. No successful GP lap champion is bundled or claimed.
 
-## Controls
+## Controls and Advanced experiments
 
-| Control | Action |
+| Control | Effect |
 | --- | --- |
-| Mouse | Select tracks, colors, mode, and session buttons |
-| Enter | Start from the menu |
-| Left / Right | Previous / next track in the menu |
-| Space | Pause / resume |
-| R | Restart the selected session |
-| S | Toggle the leading car's sensor rays |
-| T | Next track; starts a new session |
-| C | Cycle colors; preserves driving/training progress |
-| F | Toggle 1× / 4× playback |
-| Esc | Return to menu; press again to quit |
+| Track preview | Compatible replay if available, otherwise live training |
+| Replay / Train | Explicitly select a compatible driver or start a fresh population |
+| Pause / Restart | Freeze the simulation or restart the current mode and preset |
+| 1× / 4× | Request 60 / 240 fixed physics steps per second |
+| Car colors / custom color | Change appearance while preserving progress |
+| Show leader sensors / Sensor inspector | View five rays, normalized inputs, and action |
+| Checkpoints / Turn numbers / Sector colors | Independently show circuit-study overlays |
+| Accent / Sensor opacity / Trail opacity | Adjust the interface and visual overlays |
+| Fit / zoom / Follow leader | Change the camera without changing physics |
+| Presentation / Fullscreen | Expand the view; Presentation works if fullscreen fails |
+| Stop server | End the worker and release the listener |
 
-The 11 thumbnails use the existing images, including a small practice/test map.
-Mixed color cycles through the seven existing sprites. Color has no effect on
-the neural network. Restarting training uses the same seed by default, making
-early generations reproducible. The 4× control advances four fixed steps per
-displayed frame; it changes playback speed, not the driving model.
+Outside form controls, **Space** pauses, **R** restarts, **F** fits the track, and
+**P** toggles presentation. Buttons support normal keyboard activation. Typing in
+Advanced fields does not trigger simulation shortcuts.
 
-## How the experiment works
+Advanced is initially collapsed. Appearance changes apply immediately, including
+**Reset appearance**. Browser storage remembers validated visual preferences only,
+including ordinary car color, sensors, fit/follow mode and zoom; it does not store
+driving/training presets. Road styling and width affect vector studies;
+original bitmap roads stay as drawn.
 
-Each generation starts 30 cars on the selected track. Each car measures five rays
-at −90°, −45°, 0°, +45°, and +90° relative to its heading, with a maximum range of
-300 image pixels. The five distances are divided by 300 and supplied to a
-feed-forward network. The largest of four outputs chooses:
+Driving/training fields are **draft values** until **Apply and restart training**.
+Opening Advanced, typing, or **Reset defaults in draft** does not change the active
+session. Apply validates the draft on the server, starts fresh Train, and shows
+acknowledged applied values. A reset draft still needs Apply. Restart alone uses
+the current applied preset and seed.
 
-| Output | Action |
-| --- | --- |
-| 0 | Turn left by 5° |
-| 1 | Turn right by 5° |
-| 2 | Brake, down to 6 pixels per step |
-| 3 | Accelerate, up to 18 pixels per step |
+| Experiment field | Default | Allowed range |
+| --- | --- | --- |
+| Max speed | 18 units/step | 6–24 |
+| Steering | 5 degrees/step | 1–10 |
+| Sensor range | 300 units | 100–600 |
+| Road width (studies) | 120 units | 90–180 |
+| Population | 30 | 10–100 |
+| Random seed | 7 | 0–2147483647 |
+| Episode limit | 1,200 steps | 300–3,600 |
 
-Cars collide with near-white pixels or the image boundary. Movement is checked
-in small substeps to avoid jumping through a wall. Rendering is scaled to the
-window; collisions and sensors always use the original image coordinates.
+## Tracks, rewards, and compatibility
 
-**Fitness = distance travelled / 60.** Fitness is assigned from the total distance
-once, rather than repeatedly adding the entire travelled distance each frame.
-An episode ends when all cars crash or after 1,200 steps. NEAT then selects,
-mutates and speciates the next generation using `config.txt`.
+There are two vector studies and 11 original bitmap tracks. Data in
+`assets/circuits/` describes editable centerlines, turns, sectors and sources.
+Monza's GP reference is 5.793 km / 11 turns; Silverstone's is 5.891 km / 18 turns.
+These are **reference facts**, not measured simulation lengths or exact geometry.
+See the [Monza reference](https://www.formula1.com/en/latest/article/circuit-guide-everything-you-need-to-know-about-the-autodromo-nazionale-monza.51PKqBRlxNs0fzLWQzsnd0.51PKqBRlxNs0fzLWQzsnd0)
+and [Silverstone reference](https://www.formula1.com/en/latest/article/circuit-guide-everything-you-need-to-know-about-silverstone-2026.5Sl0O8g393enBWVIkjRzOr),
+reviewed October 10, 2026.
 
-This is a learning demonstration, not realistic vehicle dynamics. Fitness does
-not measure laps or ordered checkpoints and can reward repeated driving in a
-small region. Sensors contain no camera perception or speed input; walls are
-sampled from a bitmap. Those are useful limitations to discuss in an interview.
+The studies are original educational schematics informed by reference maps,
+not surveyed geometry or official artwork. Monza's bends/chicanes use a wider
+road envelope for the simplified car. Silverstone's inner loop and northern
+hairpin were opened, and its outer right section spaced outward, to separate
+road stretches at the 90/120/180-unit presets. Visible roads and collision masks
+use the same sampled centerline and width. Kerbs and labels are decoration.
 
-## Prepare another driver
+Each car feeds five wall distances at −90°, −45°, 0°, +45°, +90°, divided by the
+sensor range, into a feed-forward network. Its largest output chooses left,
+right, brake, or accelerate. Default braking bottoms out at 6 units/step and
+acceleration is capped at 18. Movement uses collision substeps; image boundaries
+are walls. Camera scaling does not change simulation coordinates.
+
+Original tracks retain **fitness = distance travelled / 60**, which can reward
+circling. Study fitness rewards forward **ordered checkpoints**, with bounded
+partial progress. A finish crossing counts a lap only after preceding gates;
+reversed, repeated, and out-of-order crossings do not accumulate checkpoint
+credit. Cars stop after 600 steps without an accepted checkpoint. Episodes also
+end when all cars crash or the configured step limit is reached. NEAT then
+selects, reproduces and speciates the next generation. Compare fitness only
+within the same track and experiment: distance and checkpoint scores differ.
+
+Browser champions use numeric JSON format 2 at
+`saved/experiments/<fingerprint>/<track>.json`. Compatibility requires the same
+physics version, track, all seven applied settings (including seed, population,
+episode limit and width), geometry revision and reward revision. Browser
+experiments preserve both `demos/classic.json` and legacy `saved/<track>.json`.
+Format-1 drivers replay normally only on their original bitmap track with the
+complete default preset. Corrupt/incompatible candidates are skipped; explicit
+Replay reports when no compatible driver exists. **Restore compatible preset
+and replay** deliberately adopts a saved driver's full preset.
+
+**Test Classic driver here** is an explicit transfer experiment, requiring
+matching max speed, steering, sensor range and road width. Its source training
+track is labelled. Source saved fitness is not a target-track score. Transfer
+does not prove the driver learned the target. A saved driver is an inference
+network, not an evolutionary population checkpoint.
+
+For headless **original-track** training:
 
 ```sh
 python train.py --track classic --generations 30 --seed 7
-python app.py --mode replay --track classic --color red
 ```
 
-`train.py` runs without a display and saves the best driver to `saved/`.
-Other track IDs: `track02`, `track03`, `track04`, `track05`, `track07`,
-`track08`, `track09`, `purple`, `rectangle`, `practice`.
-Use `--output <folder>` to save training results elsewhere.
+This saves a legacy driver under `saved/`; use `--output <folder>` for another
+destination. Study training and Advanced presets are available in the browser.
+The legacy CLI lists bitmap IDs with `python train.py --help`.
 
-Drivers are numeric JSON files with a format version, physics version, training
-track, generation, seed and fitness. Loading reconstructs only the supported
-feed-forward network. Incompatible or malformed files show an error in the menu.
-
-## Code and verification
+## Architecture and verification
 
 | File | Responsibility |
 | --- | --- |
-| `app.py` | Pygame menu, rendering and presentation controls |
-| `simulator.py` | Car movement, collision, sensors and actions |
-| `tracks.py` | Track files and start positions |
-| `training.py` | Incremental evaluation and NEAT generation lifecycle |
-| `models.py` | Versioned JSON driver export and loading |
-| `train.py` | Headless training entry point |
-| `scripts/` | Windows setup and launch helpers |
+| `server.py` | Loopback HTTP commands, WebSocket snapshots, worker and launch/shutdown |
+| `runtime.py` | Modes, validated commands, compatibility and detached snapshots |
+| `web/` | Canvas rendering, camera, browser controls and visual preferences |
+| `settings.py`, `models.py` | Presets, fingerprints and numeric driver files |
+| `circuits.py`, `progress.py`, `tracks.py` | Geometry, masks, gates and track registry |
+| `simulator.py`, `training.py` | Sensors/actions/collisions and real Python NEAT evolution |
+| `app.py`, `train.py`, `scripts/` | Native fallback, legacy CLI and Windows helpers |
 
-```sh
-python -m unittest discover -s tests -v
+HTTP commands are acknowledged before applied values change. WebSockets carry
+snapshots; all simulation mutations run on one worker. Canvas interpolates only
+within the same episode, separately from fixed physics steps. Assets/system fonts
+are local; online reference links open only when clicked.
+
+```powershell
+$env:SDL_VIDEODRIVER='dummy'
+$env:SDL_AUDIODRIVER='dummy'
+$env:PYGAME_HIDE_SUPPORT_PROMPT='1'
+python -m unittest discover -s tests
 ```
 
-The tests cover boundary handling, safe starts on every track, speed limits,
-fitness, deterministic restart, driver serialization, actual training/replay,
-pause, track/color changes and mouse input at a resized window.
-Every track has also completed a real generation in the local smoke check.
+The current suite passed **89 tests** on October 12, 2026: legacy behavior,
+genuine generation/replay, settings/save isolation, geometry/gates, transport
+lifecycle/security, simultaneous process launch reuse and actual Windows launcher
+reuse through a directory junction. The two Node checks in `tests/web_app.mjs` and
+`tests/web_visuals.mjs` also passed for appearance persistence and rendering.
+Actual browser checks covered replay/training, controls, draft apply/reset,
+reload, responsive layout and Stop. Observed simulation samples were 60–61 steps/s
+at 1× and 227 at 4×, not guarantees. Rendering frame rate was not measured.
+Successful OS fullscreen remains a manual check: the scripted browser rejected
+it and Presentation worked. See [verification evidence and limits](docs/VERIFICATION.md)
+and the [two-minute interview walkthrough](docs/INTERVIEW.md).
 
-For a quick rehearsal and interview questions, read
-[docs/INTERVIEW.md](docs/INTERVIEW.md).
+## Project origin and later artwork
 
-## Later: F1 car artwork
+This extends the **NeuralNine / Cheesy AI car simulation**, not an independently
+invented driving algorithm. Starting code/assets came from
+[NeuralNine/ai-car-simulation](https://github.com/NeuralNine/ai-car-simulation).
+Its [source](https://github.com/NeuralNine/ai-car-simulation/blob/master/newcar.py)
+credits Cheesy AI for inspiration and Florian Dedov (NeuralNine) for the tutorial.
+AI assistance was used for the presentation, browser, simulation, tests and
+documentation. [ATTRIBUTION.md](ATTRIBUTION.md) preserves verified asset matches
+and third-party license context.
 
-The current car sprites are preserved. Replacing them with manually chosen
-top-down F1 artwork is a later addition, to be selected with the project owner.
-No new car artwork or team logos are included in this upgrade. Future sprites
-should face right, have a transparent or black background, and include their
-source/permission in the attribution file. Changing the visual sprite alone
-will not change the collision model.
+Existing sprites remain. Omar will manually choose actual top-down F1 artwork
+later. Record each artist/source and permission before adding assets. The
+renderer separates rotation anchor, display size, heading offset and collision
+dimensions so artwork can change without silently altering driving behavior.
+This is a flat learning demo with simplified dynamics, not realistic racing or
+a general-purpose driver.

@@ -34,6 +34,68 @@ class ModelTests(unittest.TestCase):
         self.assertEqual(driver.network.activate(inputs), self.network.activate(inputs))
         self.assertEqual(driver.track_id, "classic")
         self.assertEqual(driver.generation, 3)
+        self.assertTrue(hasattr(driver, "experiment"), "Driver needs experiment metadata")
+        self.assertIsNone(driver.experiment)
+
+    def experiment(self):
+        # Literal metadata for the default experiment.
+        return {"settings": {"max_speed": 18, "steering_step": 5, "sensor_range": 300,
+                             "population": 30, "seed": 7, "episode_steps": 1200,
+                             "road_width": 120},
+                "geometry_revision": "bitmap-v1", "reward_version": "distance-v1"}
+
+    def test_format_two_round_trip_keeps_decisions_and_metadata(self):
+        self.assertIsNotNone(importlib.util.find_spec("settings"), "Settings are missing")
+        settings = importlib.import_module("settings").ExperimentSettings()
+        experiment = self.experiment()
+        experiment["fingerprint"] = settings.fingerprint("classic", "bitmap-v1", "distance-v1")
+        self.models.save_driver(self.path, self.network, "classic", 3, 42.0, 7,
+                                experiment=experiment)
+        self.assertEqual(json.loads(self.path.read_text())["format_version"], 2)
+        driver = self.models.load_driver(self.path)
+        self.assertEqual(driver.experiment, experiment)
+        inputs = [0.2, 0.4, 0.8, 0.4, 0.1]
+        self.assertEqual(driver.network.activate(inputs), self.network.activate(inputs))
+
+    def test_invalid_experiment_is_rejected_on_save(self):
+        settings = importlib.import_module("settings").ExperimentSettings()
+        for updates in ({"geometry_revision": ""}, {"reward_version": True},
+                        {"settings": {**settings.to_dict(), "population": 9}},
+                        {"settings": {"population": 30}}, {"fingerprint": "forged"},
+                        {"extra": "unknown"}):
+            experiment = self.experiment()
+            experiment["fingerprint"] = settings.fingerprint("classic", "bitmap-v1", "distance-v1")
+            experiment.update(updates)
+            with self.subTest(updates=updates), self.assertRaises(ValueError):
+                self.models.save_driver(self.path, self.network, "classic", 3, 42.0, 7,
+                                        experiment=experiment)
+            self.assertFalse(self.path.exists(), "Invalid metadata must not create a save")
+
+    def test_tampered_experiment_is_rejected_on_load(self):
+        settings = importlib.import_module("settings").ExperimentSettings()
+        self.save()
+        data = json.loads(self.path.read_text())
+        data["format_version"] = 2
+        data["experiment"] = self.experiment()
+        data["experiment"]["fingerprint"] = settings.fingerprint("classic", "bitmap-v1", "distance-v1")
+        for key, value in (("fingerprint", "forged"), ("geometry_revision", "bitmap-v2"),
+                           ("reward_version", "distance-v2")):
+            tampered = json.loads(json.dumps(data))
+            tampered["experiment"][key] = value
+            self.path.write_text(json.dumps(tampered))
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "fingerprint"):
+                self.models.load_driver(self.path)
+
+    def test_format_two_supports_track_metadata_for_later_transfer(self):
+        self.assertIsNotNone(importlib.util.find_spec("settings"), "Settings are missing")
+        settings = importlib.import_module("settings").ExperimentSettings()
+        experiment = self.experiment()
+        experiment["fingerprint"] = settings.fingerprint("monza", "bitmap-v1", "distance-v1")
+        self.models.save_driver(self.path, self.network, "monza", 3, 42.0, 7,
+                                experiment=experiment)
+        driver = self.models.load_driver(self.path)
+        self.assertEqual(driver.track_id, "monza")
+        self.assertEqual(driver.experiment, experiment)
 
     def test_wrong_physics_version_is_rejected(self):
         self.save()

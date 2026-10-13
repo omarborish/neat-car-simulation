@@ -42,6 +42,34 @@ exports, replay with training-track labels, launcher/setup scripts, tests and
 documentation. AI assistance was used to implement and verify these additions.
 The original desktop project has been left in its original folder.
 
+The browser extension adds a local aiohttp server, a single simulation worker,
+Canvas rendering and camera controls, validated Advanced presets, compatible
+format-2 driver saves isolated from the bundled demo, and ordered checkpoints
+for two new circuit studies. AI assistance was also used to implement, test,
+review, and document this extension. The browser screenshots under `docs/`
+are captures of the running local app, not generated interface mockups.
+
+## Circuit studies and reference material
+
+`assets/circuits/monza.json` and `assets/circuits/silverstone.json` are original,
+editable educational schematics informed by the linked Formula 1 reference
+guides and diagrams, reviewed October 10, 2026. Official map artwork was
+consulted, not bundled. Circuit names describe the chosen Grand Prix reference
+layouts; the supplied roads are not surveyed reproductions or official artwork.
+
+- [Formula 1 Monza guide](https://www.formula1.com/en/latest/article/circuit-guide-everything-you-need-to-know-about-the-autodromo-nazionale-monza.51PKqBRlxNs0fzLWQzsnd0.51PKqBRlxNs0fzLWQzsnd0)
+  and [reference diagram](https://media.formula1.com/image/upload/c_lfill%2Cw_3392/q_auto/v1740000001/fom-website/2026/Italy/2026trackmonzadetailed.webp):
+  GP reference 5.793 km and 11 turns. Bends/chicanes use a wider schematic road
+  envelope for the simplified car.
+- [Formula 1 Silverstone guide](https://www.formula1.com/en/latest/article/circuit-guide-everything-you-need-to-know-about-silverstone-2026.5Sl0O8g393enBWVIkjRzOr)
+  and [reference diagram](https://media.formula1.com/image/upload/c_lfill%2Cw_3392/q_auto/v1740000001/fom-website/2026/Circuit%20maps/2026tracksilverstonedetailed.webp):
+  GP reference 5.891 km and 18 turns. The inner loop and northern hairpin were
+  opened, and the outer right section spaced outward, to separate road stretches
+  at the 90/120/180-unit presets. Reference kilometres are not simulation units.
+
+These references do not grant rights to reuse third-party artwork or branding.
+The existing tutorial/asset license context above still applies.
+
 ## Deferred artwork
 
 New top-down F1 artwork will be chosen manually with the project owner later.
